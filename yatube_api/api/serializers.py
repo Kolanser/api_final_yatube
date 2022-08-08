@@ -55,15 +55,15 @@ class FolllowSerializer(serializers.ModelSerializer):
         model = Follow
         fields = ('user', 'following')
 
-    def create(self, validated_data):
-        user = validated_data.get('user')
-        following = validated_data.get('following')
+    def validate(self, data):
+        user = self.context['request'].user
+        following = data['following']
         if user == following:
             raise serializers.ValidationError(
-                'Невозможно подписаться на себя!'
+                'Нельзя подписаться на самого себя!'
             )
         if Follow.objects.filter(
                 user=user,
                 following=following).exists():
             raise serializers.ValidationError('Уже есть подписка!')
-        return Follow.objects.create(**validated_data)
+        return data
