@@ -1,12 +1,10 @@
-
 from django.shortcuts import get_object_or_404
 
-from rest_framework import filters, viewsets
+from rest_framework import filters, mixins, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.serializers import ValidationError
 
-from posts.models import Comment, Follow, Group, Post, User
+from posts.models import Comment, Group, Post, User
 
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
@@ -49,7 +47,16 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, post=post)
 
 
-class FolllowViewSet(viewsets.ModelViewSet):
+class CreateListViewSet(mixins.CreateModelMixin,
+                        mixins.ListModelMixin,
+                        viewsets.GenericViewSet):
+    """
+    Вьюсет обеспчивающий только GET и POST -запросы.
+    """
+    pass
+
+
+class FolllowViewSet(CreateListViewSet):
     """Подписка на автора."""
     serializer_class = FolllowSerializer
     permission_classes = (IsAuthenticated,)
@@ -64,10 +71,4 @@ class FolllowViewSet(viewsets.ModelViewSet):
         username = self.request.data.get('following')
         following = get_object_or_404(User, username=username)
         user = self.request.user
-        if user == following:
-            raise ValidationError('Невозможно подписаться на себя!')
-        if Follow.objects.filter(
-                user=user,
-                following=following).exists():
-            raise ValidationError('Уже есть подписка!')
         serializer.save(user=user, following=following)

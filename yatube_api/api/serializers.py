@@ -54,3 +54,16 @@ class FolllowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
         fields = ('user', 'following')
+
+    def create(self, validated_data):
+        user = validated_data.get('user')
+        following = validated_data.get('following')
+        if user == following:
+            raise serializers.ValidationError(
+                'Невозможно подписаться на себя!'
+            )
+        if Follow.objects.filter(
+                user=user,
+                following=following).exists():
+            raise serializers.ValidationError('Уже есть подписка!')
+        return Follow.objects.create(**validated_data)
